@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>건물 주민 커뮤니티</title>
+</head>
+<body>
+
+<!-- ===== 로그인 화면 ===== -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-container">
+    <h1>🏢 건물 주민 커뮤니티</h1>
+    
+    <form id="login-form" onsubmit="login(event)">
+      <input type="text" id="nickname-input" placeholder="닉네임" required>
+      <input type="text" id="building-input" placeholder="건물호수 (예: 101동 1001호)" required>
+      <input type="tel" id="phone-input" placeholder="전화번호" required>
+      <button type="submit">입장</button>
+    </form>
+
+    <!-- 🔴 데모 입장 버튼 -->
+    <button id="demo-btn" class="demo-button" onclick="demoLogin()">
+      📱 데모로 둘러보기
+    </button>
+  </div>
+</div>
+
+<!-- ===== 홈 화면 ===== -->
+<div id="home-screen" class="screen">
+  <div class="header">
+    <h2>🏠 홈</h2>
+    <div class="notification-icon" onclick="showScreen('notification-screen')">
+      🔔
+      <span id="notification-badge" class="badge" style="display:none;">0</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="welcome-box">
+      <p id="welcome-text">환영합니다!</p>
+    </div>
+
+    <h3>📢 최신 소식</h3>
+    <div id="posts-container"></div>
+
+    <button onclick="showScreen('post-screen')" class="action-btn">
+      ✍️ 글 작성
+    </button>
+  </div>
+
+  <div class="footer">
+    <button onclick="showScreen('home-screen')" class="nav-btn active">🏠 홈</button>
+    <button onclick="showScreen('community-screen')" class="nav-btn">👥 커뮤니티</button>
+    <button onclick="showScreen('mypage-screen')" class="nav-btn">👤 마이페이지</button>
+  </div>
+</div>
+
+<!-- ===== 커뮤니티 화면 ===== -->
+<div id="community-screen" class="screen">
+  <div class="header">
+    <button onclick="showScreen('home-screen')" class="back-btn">←</button>
+    <h2>👥 커뮤니티</h2>
+  </div>
+
+  <div class="content">
+    <div class="category-buttons">
+      <button onclick="filterPosts('all')" class="category-btn active">전체</button>
+      <button onclick="filterPosts('공지')" class="category-btn">공지</button>
+      <button onclick="filterPosts('질문')" class="category-btn">질문</button>
+      <button onclick="filterPosts('정보')" class="category-btn">정보</button>
+    </div>
+
+    <div id="community-posts-container"></div>
+
+    <button onclick="showScreen('post-screen')" class="action-btn">
+      ✍️ 글 작성
+    </button>
+  </div>
+
+  <div class="footer">
+    <button onclick="showScreen('home-screen')" class="nav-btn">🏠 홈</button>
+    <button onclick="showScreen('community-screen')" class="nav-btn active">👥 커뮤니티</button>
+    <button onclick="showScreen('mypage-screen')" class="nav-btn">👤 마이페이지</button>
+  </div>
+</div>
+
+<!-- ===== 글 작성 화면 ===== -->
+<div id="post-screen" class="screen">
+  <div class="header">
+    <button onclick="showScreen('home-screen')" class="back-btn">←</button>
+    <h2>✍️ 글 작성</h2>
+  </div>
+
+  <div class="content">
+    <form id="post-form" onsubmit="createPost(event)">
+      <select id="post-category" required>
+        <option value="">카테고리 선택</option>
+        <option value="공지">공지</option>
+        <option value="질문">질문</option>
+        <option value="정보">정보</option>
+      </select>
+
+      <input type="text" id="post-title" placeholder="제목" required>
+      <textarea id="post-content" placeholder="내용을 입력하세요" required></textarea>
+
+      <button type="submit" class="action-btn">📤 게시</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 글 상세 화면 ===== -->
+<div id="post-detail-screen" class="screen">
+  <div class="header">
+    <button onclick="showScreen('home-screen')" class="back-btn">←</button>
+    <h2>📄 글 상세</h2>
+  </div>
+
+  <div class="content">
+    <div id="post-detail-container"></div>
+
+    <h3>💬 댓글</h3>
+    <div id="comments-container"></div>
+
+    <form id="comment-form" onsubmit="addComment(event)">
+      <input type="text" id="comment-input" placeholder="댓글을 입력하세요" required>
+      <button type="submit">💬 댓글 작성</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 알림 화면 ===== -->
+<div id="notification-screen" class="screen">
+  <div class="header">
+    <button onclick="showScreen('home-screen')" class="back-btn">←</button>
+    <h2>🔔 알림</h2>
+  </div>
+
+  <div class="content">
+    <div id="notifications-container"></div>
+  </div>
+</div>
+
+<!-- ===== 마이페이지 화면 ===== -->
+<div id="mypage-screen" class="screen">
+  <div class="header">
+    <h2>👤 마이페이지</h2>
+  </div>
+
+  <div class="content">
+    <div class="profile-box">
+      <h3 id="mypage-nickname">닉네임</h3>
+      <p id="mypage-building">건물호수</p>
+      <p id="mypage-phone">전화번호</p>
+    </div>
+
+    <h3>📝 내 글</h3>
+    <div id="mypage-posts-container"></div>
+
+    <button onclick="logout()" class="action-btn logout-btn">🚪 로그아웃</button>
+  </div>
+
+  <div class="footer">
+    <button onclick="showScreen('home-screen')" class="nav-btn">🏠 홈</button>
+    <button onclick="showScreen('community-screen')" class="nav-btn">👥 커뮤니티</button>
+    <button onclick="showScreen('mypage-screen')" class="nav-btn active">👤 마이페이지</button>
+  </div>
+</div>
+
+</body>
+</html>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      overflow: hidden;
+    }
+
+    /* ===== 화면 기본 스타일 ===== */
+    .screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      overflow-y: auto;
+      z-index: 1;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== 로그인 화면 ===== */
+    #auth-screen {
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .auth-container {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .auth-container h1 {
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    #login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    #login-form input,
+    #login-form button {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    #login-form input {
+      background-color: #f9f9f9;
+    }
+
+    #login-form input:focus {
+      outline: none;
+      border-color: #667eea;
+      background-color: #fff;
+    }
+
+    #login-form button {
+      background-color: #667eea;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #login-form button:hover {
+      background-color: #5568d3;
+    }
+
+    /* 🔴 데모 버튼 스타일 */
+    .demo-button {
+      padding: 12px;
+      background-color: #f0f0f0;
+      color: #333;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .demo-button:hover {
+      background-color: #e0e0e0;
+      border-color: #999;
+    }
+
+    .demo-button:active {
+      transform: scale(0.98);
+    }
+
+    /* ===== 헤더 ===== */
+    .header {
+      background-color: #667eea;
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h2 {
+      font-size: 20px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .back-btn:hover {
+      opacity: 0.8;
+    }
+
+    /* 알림 아이콘 */
+    .notification-icon {
+      position: relative;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: #ff4444;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* ===== 콘텐츠 영역 ===== */
+    .content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      padding-bottom: 80px;
+    }
+
+    /* ===== 환영 박스 ===== */
+    .welcome-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .welcome-box p {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* ===== 게시물 스타일 ===== */
+    .post {
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .post:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .post-category {
+      display: inline-block;
+      background-color: #667eea;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .post-meta {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .post-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .post-content {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* ===== 카테고리 버튼 ===== */
+    .category-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .category-btn {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background-color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.3s;
+    }
+
+    .category-btn.active {
+      background-color: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .category-btn:hover {
+      border-color: #667eea;
+    }
+
+    /* ===== 폼 스타일 ===== */
+    #post-form,
+    #comment-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #post-form input,
+    #post-form select,
+    #post-form textarea,
+    #comment-form input {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    #post-form textarea {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    #post-form input:focus,
+    #post-form select:focus,
+    #post-form textarea:focus,
+    #comment-form input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* ===== 액션 버튼 ===== */
+    .action-btn {
+      padding: 12px;
+      background-color: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 12px;
+    }
+
+    .action-btn:hover {
+      background-color: #5568d3;
+    }
+
+    .action-btn:active {
+      transform: scale(0.98);
+    }
+
+    .logout-btn {
+      background-color: #ff6b6b;
+    }
+
+    .logout-btn:hover {
+      background-color: #ee5a52;
+    }
+
+    /* ===== 프로필 박스 ===== */
+    .profile-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .profile-box h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .profile-box p {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 4px;
+    }
+
+    /* ===== 댓글 스타일 ===== */
+    .comment {
+      background-color: #f9f9f9;
+      border-left: 3px solid #667eea;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+    }
+
+    .comment-author {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .comment-content {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .comment-meta {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    /* ===== 알림 스타일 ===== */
+    .notification {
+      background-color: #f0f7ff;
+      border-left: 4px solid #667eea;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+    }
+
+    .notification.unread {
+      background-color: #e8f0ff;
+      font-weight: bold;
+    }
+
+    .notification-text {
+      color: #333;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .notification-time {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    /* ===== 푸터 (네비게이션) ===== */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      z-index: 10;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #999;
+      transition: all 0.3s;
+    }
+
+    .nav-btn.active {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .nav-btn:hover {
+      color: #667eea;
+    }
+
+    /* ===== 반응형 디자인 ===== */
+    @media (max-width: 480px) {
+      .auth-container {
+        padding: 30px 20px;
+      }
+
+      .content {
+        padding: 12px;
+        padding-bottom: 80px;
+      }
+
+      .header h2 {
+        font-size: 18px;
+      }
+    }
+
+    /* ===== 스크롤바 커스텀 ===== */
+    .content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+
+    .content::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
+
+    <script>
+    // ===== 전역 상태 관리 =====
+    let state = {
+      currentUser: null,
+      posts: [],
+      notifications: [],
+      currentPostId: null,
+      filterCategory: 'all'
+    };
+
+    // ===== 데모 데이터 생성 =====
+    function seedDemoData() {
+      state.posts = [
+        {
+          id: 1,
+          author: '관리자',
+          building: '101동 1001호',
+          category: '공지',
+          title: '🏢 건물 정기 점검 안내',
+          content: '다음 주 월요일 오전 10시에 건물 전기 점검이 있습니다. 양해 부탁드립니다.',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          comments: [
+            { author: '주민A', content: '알겠습니다!', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000) }
+          ],
+          likes: 5
+        },
+        {
+          id: 2,
+          author: '주민B',
+          building: '101동 1002호',
+          category: '질문',
+          title: '🚗 주차장 예약 방법이 어떻게 되나요?',
+          content: '새로 이사 온 주민입니다. 주차장 예약은 어떻게 하는지 알려주세요.',
+          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
+          comments: [
+            { author: '주민C', content: '관리사무소에 문의하세요!', timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000) }
+          ],
+          likes: 3
+        },
+        {
+          id: 3,
+          author: '주민D',
+          building: '101동 1003호',
+          category: '정보',
+          title: '🍕 근처 맛집 추천',
+          content: '건물 근처에 새로 생긴 피자집이 정말 맛있어요! 모두 가봐야 합니다.',
+          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+          comments: [],
+          likes: 8
+        }
+      ];
+
+      state.notifications = [
+        {
+          id: 1,
+          message: '새로운 댓글이 달렸습니다: "알겠습니다!"',
+          timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
+          read: false
+        },
+        {
+          id: 2,
+          message: '주민B님이 댓글을 좋아합니다.',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          read: false
+        }
+      ];
+    }
+
+    // ===== 화면 전환 함수 =====
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+      document.getElementById(screenId).classList.add('active');
+
+      // 네비게이션 버튼 활성화 상태 업데이트
+      updateNavButtons(screenId);
+
+      // 화면별 초기화
+      if (screenId === 'home-screen') {
+        renderPosts();
+      } else if (screenId === 'community-screen') {
+        renderCommunityPosts();
+      } else if (screenId === 'mypage-screen') {
+        renderMyPage();
+      } else if (screenId === 'notification-screen') {
+        renderNotifications();
+      }
+    }
+
+    // ===== 네비게이션 버튼 활성화 =====
+    function updateNavButtons(screenId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      if (screenId === 'home-screen') {
+        document.querySelectorAll('.nav-btn')[0].classList.add('active');
+      } else if (screenId === 'community-screen') {
+        document.querySelectorAll('.nav-btn')[1].classList.add('active');
+      } else if (screenId === 'mypage-screen') {
+        document.querySelectorAll('.nav-btn')[2].classList.add('active');
+      }
+    }
+
+    // ===== 로그인 함수 =====
+    function login(event) {
+      event.preventDefault();
+
+      const nickname = document.getElementById('nickname-input').value;
+      const building = document.getElementById('building-input').value;
+      const phone = document.getElementById('phone-input').value;
+
+      if (!nickname || !building || !phone) {
+        alert('모든 정보를 입력해주세요!');
+        return;
+      }
+
+      state.currentUser = { nickname, building, phone };
+      localStorage.setItem('currentUser', JSON.stringify(state.currentUser));
+
+      showScreen('home-screen');
+      renderWelcome();
+    }
+
+    // ===== 데모 로그인 함수 =====
+    function demoLogin() {
+      state.currentUser = {
+        nickname: '데모사용자',
+        building: '101동 1001호',
+        phone: '010-0000-0000'
+      };
+
+      seedDemoData();
+      localStorage.setItem('currentUser', JSON.stringify(state.currentUser));
+
+      showScreen('home-screen');
+      renderWelcome();
+      updateNotificationBadge();
+    }
+
+    // ===== 환영 메시지 렌더링 =====
+    function renderWelcome() {
+      const welcomeText = document.getElementById('welcome-text');
+      if (state.currentUser) {
+        welcomeText.textContent = `👋 ${state.currentUser.nickname}님, 환영합니다!`;
+      }
+    }
+
+    // ===== 게시물 렌더링 (홈) =====
+    function renderPosts() {
+      const container = document.getElementById('posts-container');
+      container.innerHTML = '';
+
+      if (state.posts.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">아직 게시물이 없습니다.</p>';
+        return;
+      }
+
+      state.posts.forEach(post => {
+        const postElement = createPostElement(post);
+        container.appendChild(postElement);
+      });
+    }
+
+    // ===== 게시물 요소 생성 =====
+    function createPostElement(post) {
+      const div = document.createElement('div');
+      div.className = 'post';
+      div.onclick = () => showPostDetail(post.id);
+
+      const categoryBadge = `<span class="post-category">${post.category}</span>`;
+      const meta = `<span class="post-meta">${post.author} • ${formatTime(post.timestamp)}</span>`;
+
+      div.innerHTML = `
+        <div class="post-header">
+          ${categoryBadge}
+          ${meta}
+        </div>
+        <div class="post-title">${post.title}</div>
+        <div class="post-content">${post.content.substring(0, 100)}...</div>
+        <div style="margin-top: 8px; font-size: 12px; color: #999;">
+          💬 ${post.comments.length} | ❤️ ${post.likes}
+        </div>
+      `;
+
+      return div;
+    }
+
+    // ===== 시간 포맷팅 =====
+    function formatTime(date) {
+      const now = new Date();
+      const diff = now - date;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+
+      if (minutes < 1) return '방금 전';
+      if (minutes < 60) return `${minutes}분 전`;
+      if (hours < 24) return `${hours}시간 전`;
+      if (days < 7) return `${days}일 전`;
+
+      return date.toLocaleDateString('ko-KR');
+    }
+
+    // ===== 게시물 상세 보기 =====
+    function showPostDetail(postId) {
+      state.currentPostId = postId;
+      const post = state.posts.find(p => p.id === postId);
+
+      if (!post) return;
+
+      const detailContainer = document.getElementById('post-detail-container');
+      detailContainer.innerHTML = `
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span class="post-category">${post.category}</span>
+            <span class="post-meta">${post.author} • ${formatTime(post.timestamp)}</span>
+          </div>
+          <h3 style="font-size: 20px; margin-bottom: 12px;">${post.title}</h3>
+          <p style="color: #666; line-height: 1.6;">${post.content}</p>
+          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #999;">
+            ❤️ ${post.likes} | 📍 ${post.building}
+          </div>
+        </div>
+      `;
+
+      renderComments(postId);
+      showScreen('post-detail-screen');
+    }
+
+    // ===== 댓글 렌더링 =====
+    function renderComments(postId) {
+      const post = state.posts.find(p => p.id === postId);
+      const container = document.getElementById('comments-container');
+      container.innerHTML = '';
+
+      if (!post || post.comments.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">댓글이 없습니다.</p>';
+        return;
+      }
+
+      post.comments.forEach(comment => {
+        const commentElement = document.createElement('div');
+        commentElement.className = 'comment';
+        commentElement.innerHTML = `
+          <div class="comment-author">${comment.author}</div>
+          <div class="comment-content">${comment.content}</div>
+          <div class="comment-meta">${formatTime(comment.timestamp)}</div>
+        `;
+        container.appendChild(commentElement);
+      });
+    }
+
+    // ===== 댓글 추가 =====
+    function addComment(event) {
+      event.preventDefault();
+
+      const input = document.getElementById('comment-input');
+      const content = input.value.trim();
+
+      if (!content) {
+        alert('댓글을 입력해주세요!');
+        return;
+      }
+
+      const post = state.posts.find(p => p.id === state.currentPostId);
+      if (!post) return;
+
+      post.comments.push({
+        author: state.currentUser.nickname,
+        content: content,
+        timestamp: new Date()
+      });
+
+      // 알림 추가
+      addNotification(`새로운 댓글이 달렸습니다: "${content}"`);
+
+      input.value = '';
+      renderComments(state.currentPostId);
+    }
+
+    // ===== 게시물 작성 =====
+    function createPost(event) {
+      event.preventDefault();
+
+      const category = document.getElementById('post-category').value;
+      const title = document.getElementById('post-title').value;
+      const content = document.getElementById('post-content').value;
+
+      if (!category || !title || !content) {
+        alert('모든 정보를 입력해주세요!');
+        return;
+      }
+
+      const newPost = {
+        id: state.posts.length + 1,
+        author: state.currentUser.nickname,
+        building: state.currentUser.building,
+        category: category,
+        title: title,
+        content: content,
+        timestamp: new Date(),
+        comments: [],
+        likes: 0
+      };
+
+      state.posts.unshift(newPost);
+      addNotification(`${state.currentUser.nickname}님이 새 글을 작성했습니다.`);
+
+      document.getElementById('post-form').reset();
+      showScreen('home-screen');
+    }
+
+    // ===== 커뮤니티 게시물 렌더링 =====
+    function renderCommunityPosts() {
+      const container = document.getElementById('community-posts-container');
+      container.innerHTML = '';
+
+      let filteredPosts = state.posts;
+
+      if (state.filterCategory !== 'all') {
+        filteredPosts = state.posts.filter(p => p.category === state.filterCategory);
+      }
+
+      if (filteredPosts.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">게시물이 없습니다.</p>';
+        return;
+      }
+
+      filteredPosts.forEach(post => {
+        const postElement = createPostElement(post);
+        container.appendChild(postElement);
+      });
+    }
+
+    // ===== 카테고리 필터링 =====
+    function filterPosts(category) {
+      state.filterCategory = category;
+
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      event.target.classList.add('active');
+      renderCommunityPosts();
+    }
+
+    // ===== 마이페이지 렌더링 =====
+    function renderMyPage() {
+      if (!state.currentUser) return;
+
+      document.getElementById('mypage-nickname').textContent = state.currentUser.nickname;
+      document.getElementById('mypage-building').textContent = `건물: ${state.currentUser.building}`;
+      document.getElementById('mypage-phone').textContent = `전화: ${state.currentUser.phone}`;
+
+      const myPosts = state.posts.filter(p => p.author === state.currentUser.nickname);
+      const container = document.getElementById('mypage-posts-container');
+      container.innerHTML = '';
+
+      if (myPosts.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">작성한 글이 없습니다.</p>';
+        return;
+      }
+
+      myPosts.forEach(post => {
+        const postElement = createPostElement(post);
+        container.appendChild(postElement);
+      });
+    }
+
+    // ===== 알림 추가 =====
+    function addNotification(message) {
+      const notification = {
+        id: state.notifications.length + 1,
+        message: message,
+        timestamp: new Date(),
+        read: false
+      };
+
+      state.notifications.unshift(notification);
+      updateNotificationBadge();
+    }
+
+    // ===== 알림 배지 업데이트 =====
+    function updateNotificationBadge() {
+      const unreadCount = state.notifications.filter(n => !n.read).length;
+      const badge = document.getElementById('notification-badge');
+
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+      // ===== 알림 렌더링 =====
+    function renderNotifications() {
+      const container = document.getElementById('notifications-container');
+      container.innerHTML = '';
+
+      if (state.notifications.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">알림이 없습니다.</p>';
+        return;
+      }
+
+      state.notifications.forEach(notification => {
+        const notifElement = document.createElement('div');
+        notifElement.className = `notification ${!notification.read ? 'unread' : ''}`;
+        notifElement.innerHTML = `
+          <div class="notification-text">${notification.message}</div>
+          <div class="notification-time">${formatTime(notification.timestamp)}</div>
+        `;
+
+        // 클릭하면 읽음 표시
+        notifElement.onclick = () => {
+          notification.read = true;
+          renderNotifications();
+          updateNotificationBadge();
+        };
+
+        container.appendChild(notifElement);
+      });
+
+      // 모든 알림을 읽음 표시
+      state.notifications.forEach(n => n.read = true);
+      updateNotificationBadge();
+    }
+
+    // ===== 로그아웃 =====
+    function logout() {
+      if (confirm('정말 로그아웃하시겠습니까?')) {
+        state.currentUser = null;
+        state.posts = [];
+        state.notifications = [];
+        localStorage.removeItem('currentUser');
+
+        // 폼 초기화
+        document.getElementById('login-form').reset();
+        document.getElementById('post-form').reset();
+        document.getElementById('comment-form').reset();
+
+        showScreen('auth-screen');
+      }
+    }
+
+    // ===== 페이지 로드 시 실행 =====
+    window.addEventListener('load', () => {
+      const savedUser = localStorage.getItem('currentUser');
+
+      if (savedUser) {
+        state.currentUser = JSON.parse(savedUser);
+        showScreen('home-screen');
+        renderWelcome();
+      } else {
+        showScreen('auth-screen');
+      }
+    });
+  </script>ㄴ
