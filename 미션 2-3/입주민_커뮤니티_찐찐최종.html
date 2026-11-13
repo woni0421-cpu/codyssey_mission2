@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>입주민 커뮤니티</title>
+    <style>
+        /* 기본 스타일 초기화 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Malgun Gothic', sans-serif; }
+        body { background-color: #e9ecef; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* 반응형 레이아웃: 화면 전체를 꽉 채우도록 max-width 100% 적용 */
+        #app { width: 100%; max-width: 100%; background-color: #ffffff; height: 100%; display: flex; flex-direction: column; position: relative; margin: 0 auto; }
+        
+        /* 화면 전환 클래스 */
+        .view { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 60px; }
+        .view.active { display: flex; }
+
+        /* 공통 UI 요소 */
+        header { background-color: #4A90E2; color: white; padding: 15px 20px; text-align: center; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { background: none; border: none; color: white; font-size: 16px; cursor: pointer; }
+        .content { padding: 20px; flex: 1; }
+        
+        /* 버튼 스타일 */
+        .btn { display: block; width: 100%; padding: 12px; background-color: #4A90E2; color: white; text-align: center; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn:hover { background-color: #357ABD; }
+        .btn-outline { background-color: white; color: #4A90E2; border: 1px solid #4A90E2; }
+        .btn-outline:hover { background-color: #f1f8ff; }
+        
+        /* 입력 폼 */
+        input, textarea, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        textarea { height: 150px; resize: none; }
+        
+        /* 리스트 및 카드 */
+        .post-card { border-bottom: 1px solid #eee; padding: 15px 0; cursor: pointer; transition: background 0.2s; }
+        .post-card:hover { background-color: #f9f9f9; }
+        .post-card h3 { font-size: 16px; margin-bottom: 5px; }
+        .post-card p { font-size: 14px; color: #666; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .post-meta { font-size: 12px; color: #999; display: flex; justify-content: space-between; }
+        .category-badge { background-color: #f1f3f5; padding: 4px 10px; border-radius: 12px; font-size: 12px; color: #4A90E2; display: inline-block; margin-bottom: 8px; }
+
+        /* 카테고리 그리드 (2x4 고정) */
+        .category-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .category-item { text-align: center; font-size: 12px; cursor: pointer; padding: 10px 5px; background: #f8f9fa; border-radius: 10px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .category-item:hover { background: #e2e6ea; font-weight: bold; transform: translateY(-2px); }
+        .category-emoji { font-size: 24px; margin-bottom: 5px; }
+
+        /* 하단 네비게이션 바 */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 12px 0; z-index: 20; }
+        .nav-item { text-align: center; font-size: 14px; color: #666; cursor: pointer; flex: 1; }
+        .nav-item.active { color: #4A90E2; font-weight: bold; }
+
+        /* 채팅 UI */
+        .chat-message { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .chat-message.me { align-items: flex-end; }
+        .chat-message.other { align-items: flex-start; }
+        .bubble { max-width: 70%; padding: 12px; border-radius: 15px; font-size: 14px; line-height: 1.4; }
+        .me .bubble { background-color: #4A90E2; color: white; border-bottom-right-radius: 2px; }
+        .other .bubble { background-color: #ffffff; color: #333; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* 플로팅 글쓰기 버튼 */
+        .fab { position: absolute; bottom: 80px; right: 30px; width: 56px; height: 56px; background-color: #4A90E2; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; z-index: 15; transition: transform 0.2s; }
+        .fab:hover { transform: scale(1.1); }
+
+        /* 알림창 UI */
+        .noti-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; position: relative; }
+        .noti-badge { position: absolute; top: -2px; right: -2px; background: #ff4d4f; width: 10px; height: 10px; border-radius: 50%; display: none; }
+        #noti-panel { display: none; position: absolute; top: 60px; right: 20px; background: white; border: 1px solid #ddd; width: 280px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; color: #333; text-align: left; max-height: 300px; overflow-y: auto; }
+        .noti-item { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; line-height: 1.4; }
+        .noti-item:hover { background-color: #f9f9f9; }
+
+        /* PC 화면(768px 이상) 꽉 찬 확장 레이아웃 */
+        @media (min-width: 768px) {
+            .content { padding: 30px 50px; }
+            
+            /* 카테고리 크기 확대 (여백 없이 꽉 차게) */
+            .category-grid { gap: 15px; margin-bottom: 30px; }
+            .category-item { font-size: 14px; padding: 15px 5px; }
+            .category-emoji { font-size: 32px; }
+            
+            /* 게시글 목록: 화면이 넓어질수록 빈 공간 없이 자동으로 단(column)이 늘어남 */
+            #home-post-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+            .post-card { border: 1px solid #ddd; border-radius: 10px; padding: 20px; border-bottom: 1px solid #ddd; }
+            
+            /* 채팅 목록은 1단(가로로 길게) 유지하므로 별도의 grid 속성을 주지 않음 */
+            
+            .bottom-nav { font-size: 16px; padding: 15px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- 1. 인증 화면 -->
+    <div id="view-auth" class="view active">
+        <div class="content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <h2 style="color: #4A90E2; margin-bottom: 10px;">우리 건물 커뮤니티</h2>
+            <p style="margin-bottom: 30px; color: #666; font-size: 15px;">안전한 이용을 위해 가입 방식을 선택해주세요.</p>
+            
+            <div style="width: 100%; max-width: 400px; border: 1px solid #ddd; padding: 25px; border-radius: 12px; margin-bottom: 20px; background: #fff;">
+                <h4 style="margin-bottom: 10px;">우리 집 최초 가입자이신가요?</h4>
+                <p style="font-size: 13px; color: #888; margin-bottom: 15px; line-height: 1.4;">임대차 계약서 또는 관리비 고지서 사진을 첨부하여 관리자 승인을 받아주세요.</p>
+                <input type="file" style="margin-bottom: 15px; font-size: 13px;">
+                <button class="btn" onclick="authByDocument()">서류로 인증 요청하기</button>
+            </div>
+
+            <div style="width: 100%; max-width: 400px; border: 1px solid #ddd; padding: 25px; border-radius: 12px; background: #fff;">
+                <h4 style="margin-bottom: 10px;">초대 코드를 받으셨나요?</h4>
+                <p style="font-size: 13px; color: #888; margin-bottom: 15px; line-height: 1.4;">가족이나 동거인에게 받은 24시간 유효 코드를 입력해주세요.</p>
+                <input type="text" id="auth-code-input" placeholder="예: APT-1234" style="text-align: center; letter-spacing: 2px;">
+                <button class="btn btn-outline" onclick="authByCode()">코드로 가입하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 홈 화면 -->
+    <div id="view-home" class="view">
+        <header>
+            <div style="width: 24px;"></div>
+            우리 건물 커뮤니티
+            <button class="noti-btn" onclick="toggleNoti()">
+                🔔<div id="noti-badge" class="noti-badge"></div>
+            </button>
+            <div id="noti-panel">
+                <div style="padding: 12px; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 14px;">새로운 알림</div>
+                <div id="noti-list"></div>
+            </div>
+        </header>
+        <div class="content">
+            <!-- 카테고리 2x4 그리드 -->
+            <div class="category-grid">
+                <div class="category-item" onclick="showCategory('자유게시판')"><div class="category-emoji">🗣️</div>자유게시판</div>
+                <div class="category-item" onclick="showCategory('분실물')"><div class="category-emoji">🔍</div>분실물</div>
+                <div class="category-item" onclick="showCategory('장터/나눔')"><div class="category-emoji">🤝</div>장터/나눔</div>
+                <div class="category-item" onclick="showCategory('빌려주세요')"><div class="category-emoji">🤲</div>빌려주세요</div>
+                <div class="category-item" onclick="showCategory('공동구매')"><div class="category-emoji">📦</div>공동구매</div>
+                <div class="category-item" onclick="showCategory('배달 같이')"><div class="category-emoji">🛵</div>배달 같이</div>
+                <div class="category-item" onclick="showCategory('층간소음')"><div class="category-emoji">🤫</div>층간소음</div>
+                <div class="category-item" onclick="showCategory('전체')" style="background-color: #e2e6ea;"><div class="category-emoji">📋</div>전체보기</div>
+            </div>
+            
+            <h3 style="margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #333; padding-bottom: 5px; display: inline-block;">최신 글</h3>
+            <div id="home-post-list"></div>
+        </div>
+        <div class="fab" onclick="switchView('view-write')">+</div>
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchView('view-home')">홈</div>
+            <div class="nav-item" onclick="switchView('view-chat-list')">채팅</div>
+            <div class="nav-item" onclick="switchView('view-mypage')">마이페이지</div>
+        </div>
+    </div>
+
+    <!-- 3. 글쓰기 화면 -->
+    <div id="view-write" class="view">
+        <header>
+            <button class="back-btn" onclick="switchView('view-home')">취소</button>
+            글쓰기
+            <div style="width: 30px;"></div>
+        </header>
+        <div class="content">
+            <select id="write-category" onchange="checkAnonymousRule()">
+                <option value="자유게시판">자유게시판</option>
+                <option value="분실물">분실물</option>
+                <option value="장터/나눔">장터/나눔 (익명불가)</option>
+                <option value="빌려주세요">빌려주세요</option>
+                <option value="공동구매">공동구매</option>
+                <option value="배달 같이">배달 같이하기</option>
+                <option value="층간소음">층간소음</option>
+            </select>
+            <input type="text" id="write-title" placeholder="제목을 입력하세요">
+            <textarea id="write-content" placeholder="내용을 입력하세요"></textarea>
+            <label style="display: flex; align-items: center; margin-bottom: 20px; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" id="write-anon" style="width: auto; margin-right: 10px; margin-bottom: 0; cursor: pointer;"> 익명으로 작성하기
+            </label>
+            <button class="btn" onclick="submitPost()">등록하기</button>
+        </div>
+    </div>
+
+    <!-- 4. 게시글 상세 화면 -->
+    <div id="view-detail" class="view">
+        <header>
+            <button class="back-btn" onclick="switchView('view-home')">← 뒤로</button>
+            게시글
+            <div style="width: 30px;"></div>
+        </header>
+        <div class="content">
+            <div id="detail-content"></div>
+            <button id="btn-chat-request" class="btn btn-outline" style="margin-top: 20px;" onclick="requestChat()">작성자에게 1:1 채팅 보내기</button>
+            
+            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
+            <h4 style="margin-bottom: 15px;">댓글</h4>
+            <div id="detail-comments" style="margin-bottom: 20px;"></div>
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="comment-input" placeholder="댓글을 남겨보세요" style="margin-bottom: 0;">
+                <button class="btn" style="width: 80px; margin-top: 0;" onclick="addComment()">등록</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 채팅 목록 화면 -->
+    <div id="view-chat-list" class="view">
+        <header>채팅 목록</header>
+        <div class="content" id="chat-list-content"></div>
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="switchView('view-home')">홈</div>
+            <div class="nav-item active" onclick="switchView('view-chat-list')">채팅</div>
+            <div class="nav-item" onclick="switchView('view-mypage')">마이페이지</div>
+        </div>
+    </div>
+
+    <!-- 6. 1:1 채팅방 화면 -->
+    <div id="view-chat-room" class="view">
+        <header>
+            <button class="back-btn" onclick="switchView('view-chat-list')">←</button>
+            <span id="chat-room-title">대화방</span>
+            <div style="width: 30px;"></div>
+        </header>
+        <div class="content" id="chat-messages" style="background-color: #b2c7d9; flex: 1;"></div>
+        <div style="padding: 15px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd;">
+            <input type="text" id="chat-input" placeholder="메시지 보내기" style="margin-bottom: 0;">
+            <button class="btn" style="width: 70px; margin-top: 0;" onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+
+    <!-- 7. 마이페이지 화면 -->
+    <div id="view-mypage" class="view">
+        <header>마이페이지</header>
+        <div class="content">
+            <div style="text-align: center; padding: 20px 0;">
+                <div style="width: 80px; height: 80px; background-color: #ddd; border-radius: 50%; margin: 0 auto 15px;"></div>
+                <h3 id="my-nickname">행복한입주민</h3>
+                <p style="color: #4A90E2; font-size: 13px; margin-top: 8px; font-weight: bold;">✓ 입주민 인증 완료</p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center; border: 1px solid #eee;">
+                <h4 style="margin-bottom: 10px;">가족/동거인 초대하기</h4>
+                <p style="font-size: 12px; color: #666; margin-bottom: 15px; line-height: 1.5;">
+                    초대받은 사람이 규칙을 위반하면<br><strong style="color:#ff4d4f;">초대한 사람도 함께 제재(연대 책임)</strong>를 받습니다.<br>반드시 실제 거주하는 가족에게만 전달해주세요.
+                </p>
+                <button class="btn btn-outline" onclick="generateInviteCode()">초대 코드 발급 (남은 횟수: <span id="invite-count">3</span>회)</button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <ul style="list-style: none; line-height: 3; font-size: 15px;">
+                <li style="cursor: pointer;">내가 쓴 글</li>
+                <li style="cursor: pointer;">내가 쓴 댓글</li>
+                <li style="color: #ff4d4f; cursor: pointer;">신고/징계 내역 확인</li>
+                <li style="cursor: pointer; color: #888;">로그아웃</li>
+            </ul>
+        </div>
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="switchView('view-home')">홈</div>
+            <div class="nav-item" onclick="switchView('view-chat-list')">채팅</div>
+            <div class="nav-item active" onclick="switchView('view-mypage')">마이페이지</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const currentUser = { id: 'user1', nickname: '행복한입주민' };
+    let currentPostId = null;
+    let inviteCount = 3; 
+    
+    let notifications = [
+        "🎉 관리자: 입주민 인증이 완료되었습니다. 환영합니다!",
+        "💬 '전자레인지 무료 나눔합니다' 글에 새로운 댓글이 달렸습니다."
+    ];
+    
+    let posts = [
+        { id: 1, category: '자유게시판', title: '오늘 단지 내 산책로 벚꽃이 예쁘네요', content: '날씨가 너무 좋아서 산책 나왔는데 꽃이 활짝 피었네요. 다들 좋은 하루 보내세요!', author: '101동주민', isAnon: false, comments: ['맞아요 저도 아까 보고 사진 찍었어요~'] },
+        { id: 2, category: '분실물', title: '놀이터 벤치에서 차키 주우신 분', content: '어제 저녁 8시쯤 아이들 놀이터 벤치에 검은색 가죽 키링이 달린 차키를 두고 온 것 같습니다. 보신 분 연락 부탁드려요.', author: '익명', isAnon: true, comments: [] },
+        { id: 3, category: '장터/나눔', title: '전자레인지 무료 나눔합니다', content: '1년 정도 깨끗하게 사용했고 작동 잘 됩니다. 1층 로비에서 직접 가져가실 분 구해요.', author: '친절한이웃', isAnon: false, comments: ['저요! 채팅 드릴게요.'] },
+        { id: 4, category: '빌려주세요', title: '전동 드릴 10분만 빌릴 수 있을까요?', content: '액자 하나만 달려고 하는데 잠깐 빌려주실 천사 이웃님 찾습니다 ㅠㅠ', author: '초보자취생', isAnon: false, comments: ['저희 집에 있어요! 채팅주세요.'] },
+        { id: 5, category: '공동구매', title: '코스트코 두루마리 휴지 반 나누실 분', content: '휴지 양이 너무 많아서 반반 나누실 분 구합니다. 내일 저녁에 사올 예정이에요.', author: '알뜰살뜰', isAnon: false, comments: [] },
+        { id: 6, category: '배달 같이', title: '오늘 밤 치킨 배달비 쉐어하실 분', content: '치킨 시킬 건 거 배달비가 너무 비싸네요. 같이 시켜서 1층 로비에서 나누실 분?', author: '치킨매니아', isAnon: false, comments: ['저요! 양념 반 후라이드 반 되나요?'] },
+        { id: 7, category: '층간소음', title: '밤 11시 이후 쿵쿵 소리', content: '최근 며칠 동안 늦은 시간에 쿵쿵거리는 소리가 계속 들리네요. 조금만 주의 부탁드립니다.', author: '익명', isAnon: true, comments: ['저도 어제 들었어요. 다같이 주의가 필요해보입니다.'] }
+    ];
+
+    let chats = [
+        { id: 1, partner: '친절한이웃', postTitle: '전자레인지 무료 나눔합니다', messages: [
+            { sender: 'me', text: '안녕하세요! 전자레인지 아직 나눔 가능할까요?' },
+            { sender: 'other', text: '네 가능합니다! 오늘 저녁 7시에 1층 로비 어떠세요?' }
+        ]},
+        { id: 2, partner: '초보자취생', postTitle: '전동 드릴 10분만 빌릴 수 있을까요?', messages: [
+            { sender: 'other', text: '안녕하세요, 드릴 빌려주신다고 해서 톡 드립니다!' },
+            { sender: 'me', text: '네~ 지금 집에 계시면 문 앞으로 가져다 드릴게요.' }
+        ]}
+    ];
+
+    window.onload = () => {
+        renderNotifications();
+    };
+
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        if(viewId === 'view-home') document.querySelectorAll('.nav-item')[0].classList.add('active');
+        if(viewId === 'view-chat-list') document.querySelectorAll('.nav-item')[1].classList.add('active');
+        if(viewId === 'view-mypage') document.querySelectorAll('.nav-item')[2].classList.add('active');
+
+        if(viewId === 'view-home') renderHome();
+        if(viewId === 'view-chat-list') renderChatList();
+        
+        document.getElementById('noti-panel').style.display = 'none';
+    }
+
+    function authByDocument() {
+        alert("서류가 제출되었습니다.\n관리자 확인 후 가입이 최종 승인됩니다.");
+        switchView('view-home');
+    }
+
+    function authByCode() {
+        const code = document.getElementById('auth-code-input').value.trim();
+        if(!code) { alert("초대 코드를 입력해주세요."); return; }
+        alert("인증되었습니다!\n커뮤니티 규칙 위반 시 초대한 가족에게도 페널티가 부여되니 매너 있는 이용 부탁드립니다.");
+        switchView('view-home');
+    }
+
+    function generateInviteCode() {
+        if(inviteCount <= 0) { alert("발급 가능한 초대 횟수를 모두 소진했습니다."); return; }
+        inviteCount--;
+        document.getElementById('invite-count').innerText = inviteCount;
+        const randomCode = Math.floor(1000 + Math.random() * 9000);
+        alert(`[초대 코드 발급 완료]\n\n코드: APT-${randomCode}\n\n- 이 코드는 발급 후 24시간 동안만 유효합니다.\n- 초대받은 사람이 문제를 일으키면 회원님도 연대 책임을 지게 됩니다.`);
+    }
+
+    function renderNotifications() {
+        const listEl = document.getElementById('noti-list');
+        if(notifications.length === 0) {
+            listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">알림이 없습니다.</div>';
+            document.getElementById('noti-badge').style.display = 'none';
+        } else {
+            listEl.innerHTML = notifications.map(n => `<div class="noti-item">${n}</div>`).join('');
+            document.getElementById('noti-badge').style.display = 'block';
+        }
+    }
+
+    function toggleNoti() {
+        const panel = document.getElementById('noti-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        document.getElementById('noti-badge').style.display = 'none'; 
+    }
+
+    function addNotification(message) {
+        notifications.unshift(message);
+        renderNotifications();
+    }
+
+    function renderHome(filterCategory = '전체') {
+        const listEl = document.getElementById('home-post-list');
+        listEl.innerHTML = '';
+        const filteredPosts = filterCategory === '전체' ? posts : posts.filter(p => p.category === filterCategory);
+        
+        if(filteredPosts.length === 0) {
+            listEl.innerHTML = '<p style="text-align:center; color:#999; padding: 40px 0; grid-column: 1 / -1;">게시글이 없습니다.</p>';
+            return;
+        }
+
+        filteredPosts.slice().reverse().forEach(post => {
+            const card = document.createElement('div');
+            card.className = 'post-card';
+            card.onclick = () => openDetail(post.id);
+            card.innerHTML = `
+                <span class="category-badge">${post.category}</span>
+                <h3 style="margin-top:8px;">${post.title}</h3>
+                <p>${post.content}</p>
+                <div class="post-meta">
+                    <span>${post.isAnon ? '익명' : post.author}</span>
+                    <span>💬 댓글 ${post.comments.length}</span>
+                </div>
+            `;
+            listEl.appendChild(card);
+        });
+    }
+
+    function showCategory(category) { renderHome(category); }
+
+    function checkAnonymousRule() {
+        const category = document.getElementById('write-category').value;
+        const anonCheckbox = document.getElementById('write-anon');
+        if (category === '장터/나눔') {
+            anonCheckbox.checked = false;
+            anonCheckbox.disabled = true;
+            alert("장터/나눔 게시판은 신뢰를 위해 익명으로 작성할 수 없습니다.");
+        } else {
+            anonCheckbox.disabled = false;
+        }
+    }
+
+    function submitPost() {
+        const category = document.getElementById('write-category').value;
+        const title = document.getElementById('write-title').value;
+        const content = document.getElementById('write-content').value;
+        const isAnon = document.getElementById('write-anon').checked;
+
+        if(!title.trim() || !content.trim()) {
+            alert("제목과 내용을 정확히 입력해주세요. (공백만 입력할 수 없습니다)");
+            return;
+        }
+
+        const newPost = { id: posts.length + 1, category, title, content, isAnon, author: currentUser.nickname, comments: [] };
+        posts.push(newPost);
+        document.getElementById('write-title').value = '';
+        document.getElementById('write-content').value = '';
+        switchView('view-home');
+    }
+
+    function openDetail(id) {
+        currentPostId = id;
+        const post = posts.find(p => p.id === id);
+        
+        document.getElementById('detail-content').innerHTML = `
+            <span class="category-badge">${post.category}</span>
+            <h2 style="margin: 10px 0;">${post.title}</h2>
+            <div style="font-size: 13px; color: #666; margin-bottom: 20px;">작성자: ${post.isAnon ? '익명' : post.author}</div>
+            <p style="line-height: 1.6; font-size: 15px;">${post.content}</p>
+        `;
+
+        const chatBtn = document.getElementById('btn-chat-request');
+        if(post.author === currentUser.nickname && !post.isAnon) {
+            chatBtn.style.display = 'none';
+        } else {
+            chatBtn.style.display = 'block';
+        }
+
+        renderComments();
+        switchView('view-detail');
+    }
+
+    function renderComments() {
+        const post = posts.find(p => p.id === currentPostId);
+        const commentsEl = document.getElementById('detail-comments');
+        if(post.comments.length === 0) {
+            commentsEl.innerHTML = '<p style="color:#999; font-size:13px;">첫 댓글을 남겨보세요.</p>';
+            return;
+        }
+        commentsEl.innerHTML = post.comments.map(c => `
+            <div style="padding: 12px 0; border-bottom: 1px dashed #eee; font-size: 14px;">
+                <span style="font-weight: bold; margin-right: 10px; color: #4A90E2;">익명</span> ${c}
+            </div>
+        `).join('');
+    }
+
+    function addComment() {
+        const input = document.getElementById('comment-input');
+        const text = input.value.trim();
+        if(!text) { alert("댓글 내용을 입력해주세요."); return; }
+        
+        const post = posts.find(p => p.id === currentPostId);
+        post.comments.push(text);
+        input.value = '';
+        renderComments();
+        addNotification(`'${post.title}' 글에 새로운 댓글이 달렸습니다.`);
+    }
+
+    function requestChat() {
+        const post = posts.find(p => p.id === currentPostId);
+        const partnerName = post.isAnon ? '익명(작성자)' : post.author;
+        
+        let chat = chats.find(c => c.postTitle === post.title);
+        if(!chat) {
+            chat = { id: chats.length + 1, partner: partnerName, postTitle: post.title, messages: [] };
+            chats.push(chat);
+        }
+        openChatRoom(chat.id);
+    }
+
+    function renderChatList() {
+        const listEl = document.getElementById('chat-list-content');
+        if(chats.length === 0) {
+            listEl.innerHTML = '<p style="text-align:center; color:#999; padding: 40px 0; grid-column: 1 / -1;">진행 중인 채팅이 없습니다.</p>';
+            return;
+        }
+        listEl.innerHTML = chats.map(chat => `
+            <div class="post-card" onclick="openChatRoom(${chat.id})" style="margin-bottom: 10px;">
+                <h3 style="font-size: 16px;">${chat.partner}</h3>
+                <p style="font-size: 13px; color: #4A90E2; margin-bottom: 5px;">게시글: ${chat.postTitle}</p>
+                <p style="color: #555;">${chat.messages.length > 0 ? chat.messages[chat.messages.length-1].text : '대화를 시작해보세요.'}</p>
+            </div>
+        `).join('');
+    }
+
+    let currentChatId = null;
+    function openChatRoom(id) {
+        currentChatId = id;
+        const chat = chats.find(c => c.id === id);
+        document.getElementById('chat-room-title').innerText = chat.partner;
+        renderChatMessages();
+        switchView('view-chat-room');
+    }
+
+    function renderChatMessages() {
+        const chat = chats.find(c => c.id === currentChatId);
+        const msgEl = document.getElementById('chat-messages');
+        msgEl.innerHTML = chat.messages.map(m => `
+            <div class="chat-message ${m.sender}">
+                <div class="bubble">${m.text}</div>
+            </div>
+        `).join('');
+        msgEl.scrollTop = msgEl.scrollHeight;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if(!text) return;
+        
+        const chat = chats.find(c => c.id === currentChatId);
+        chat.messages.push({ sender: 'me', text: text });
+        input.value = '';
+        renderChatMessages();
+    }
+
+</script>
+</body>
+</html>
